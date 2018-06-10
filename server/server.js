@@ -24,6 +24,17 @@ app.post('/todos', (req, res) => {
   });
 });
 
+//Route to get a 'Todos' list:
+app.get('/todos', (req, res) => {
+  //We use the same method for our server testing case:
+  Todo.find().then((todos) => {
+    //We send an object instead of an array:
+    res.send({todos});
+  }, (e) => {
+    res.status(400).send(e);
+  });
+});
+
 //Setting up the express server:
 app.listen(3000, () => {
   console.log('Started on port 3000')

@@ -6,10 +6,22 @@ const {app} = require('./../server');
 //Importing the 'Todo' model:
 const {Todo} = require('./../models/todo');
 
+//Array of data to be inserted in the database and test the GET method:
+var todos = [{
+  text: 'First test todo'
+}, {
+  text: 'Second test todo'
+}];
+
 //Run some code before each test to be sure that the database is empty:
 beforeEach((done) => {
   //We use the remove() method which is similar to the mongoDB native method, passing and empty object. This function is going to move on only when we call done:
-  Todo.remove({}).then(() => done());
+  // Todo.remove({}).then(() => done());
+
+  //To make a GET test we need to have some data in the 'Todos' collection. We use the mongoose insertMany method to insert an array of data:
+  Todo.remove({}).then(() => {
+    return Todo.insertMany(todos);
+  }).then(() => done());
 });
 
 //Group the tests with the 'describe' mocha method:
@@ -31,7 +43,7 @@ describe('POST /todos', () => {
           return done(err);
         }
         //If the text from body response is equal to the text defined, then:
-        Todo.find().then((todos) => {
+        Todo.find({text}).then((todos) => {
           //Asuming that the database is empty:
           expect(todos.length).toBe(1);
           expect(todos[0].text).toBe(text);
@@ -52,9 +64,22 @@ describe('POST /todos', () => {
         }
 
         Todo.find().then((todos) => {
-          expect(todos.length).toBe(0);
+          expect(todos.length).toBe(2);
           done();
         }).catch((e) => done(e));
       });
+  });
+});
+
+describe('GET /todos', () => {
+  //Third test for the GET method:
+  it('should get all todos', (done) => {
+    request(app)
+      .get('/todos')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todos.length).toBe(2);
+      })
+      .end(done);
   });
 });
