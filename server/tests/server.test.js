@@ -6,10 +6,15 @@ const {app} = require('./../server');
 //Importing the 'Todo' model:
 const {Todo} = require('./../models/todo');
 
+//We use object destructuring to grab the ids:
+const {ObjectID} = require('mongodb');
+
 //Array of data to be inserted in the database and test the GET method:
 var todos = [{
+  _id: new ObjectID,
   text: 'First test todo'
 }, {
+  _id: new ObjectID,
   text: 'Second test todo'
 }];
 
@@ -80,6 +85,36 @@ describe('GET /todos', () => {
       .expect((res) => {
         expect(res.body.todos.length).toBe(2);
       })
+      .end(done);
+  });
+});
+
+describe('GET /todos/:id', () => {
+  //Fourth test for the GET method for single resources:
+  it('should return todo doc', (done) => {
+    request(app)
+    //We use the variable injection and the 'toHexString' method to convert an object id into string:
+      .get(`/todos/${todos[0]._id.toHexString()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo.text).toBe(todos[0].text);
+      })
+      .end(done);
+  });
+  //Fifth test for the GET method for single resources:
+  it('should return 404 if todo not found', (done) => {
+    //we create a new _id that is not present in the collection:
+    var _id = new ObjectID;
+    request(app)
+      .get(`/todos/${_id.toHexString()}`)
+      .expect(404)
+      .end(done);
+  });
+  //Sixth test for the GET method for single resources:
+  it('should return 404 for non-object ids', (done) => {
+    request(app)
+      .get('/todos/123')
+      .expect(404)
       .end(done);
   });
 });
