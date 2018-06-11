@@ -4,6 +4,6 @@ var mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
 //We connect to database in local environment or in Heroku:
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/todoApp');
+mongoose.connect(process.env.MONGODB_URI);
 
 module.exports = {mongoose};

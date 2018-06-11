@@ -1,3 +1,6 @@
+//Import the code to set variables:
+require('./config/config.js');
+
 //Import express and body-parser libraries:
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -14,7 +17,7 @@ var {ObjectID} = require('mongodb');
 var app = express();
 
 //Setting up the port ready for localhost or Heroku:
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 
 //Use of body-parser middleware:
 app.use(bodyParser.json());
