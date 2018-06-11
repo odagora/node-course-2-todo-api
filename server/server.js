@@ -10,6 +10,9 @@ var {ObjectID} = require('mongodb');
 
 var app = express();
 
+//Setting up the port ready for localhost or Heroku:
+const port = process.env.PORT || 3000;
+
 //Use of body-parser middleware:
 app.use(bodyParser.json());
 
@@ -58,8 +61,8 @@ app.get('/todos/:id', (req, res) => {
 });
 
 //Setting up the express server:
-app.listen(3000, () => {
-  console.log('Started on port 3000')
+app.listen(port, () => {
+  console.log(`Started on port ${port}`)
 });
 
 //Export the express server for testing:
