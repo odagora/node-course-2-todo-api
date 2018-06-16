@@ -37,7 +37,7 @@ var UserSchema = new mongoose.Schema({
   }]
 });
 
-//To control the data returned to the user, we use the .pick method of lodash inside of a conventional function:
+//To control the data returned to the user, we use the .pick method of lodash inside of a conventional function. This is an instance method:
 UserSchema.methods.toJSON = function () {
   var user = this;
   var userObject = user.toObject();
@@ -45,7 +45,7 @@ UserSchema.methods.toJSON = function () {
   return _.pick(userObject, ['_id', 'email']);
 };
 
-//We grab the 'UserSchema' object into the 'user' variable using a conventional function because we need the 'this' operator:
+//We grab the 'UserSchema' object into the 'user' variable using a conventional function because we need the 'this' operator. This is an instance method:
 UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = 'auth';
@@ -56,6 +56,24 @@ UserSchema.methods.generateAuthToken = function () {
   //User information generation:
   return user.save().then(() => {
     return token;
+  });
+};
+
+//'findByToken' Model method creation. For this type of methods we use the 'statics' word:
+UserSchema.statics.findByToken = function (token) {
+  var User = this;
+  //Undefined variable definition:
+  var decoded;
+  //We use the try and catch methods because the jwt.verify method throws an error if not valid:
+  try {
+    decoded = jwt.verify(token, 'abc123');
+  } catch (e) {
+    return Promise.reject();
+  }
+  return User.findOne({
+    '_id': decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
   });
 };
 

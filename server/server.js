@@ -13,6 +13,8 @@ var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 var {ObjectID} = require('mongodb');
+//Import of the middleware:
+var {authenticate} = require('./middleware/authenticate');
 
 var app = express();
 
@@ -122,6 +124,12 @@ app.post('/users', (req, res) => {
   }).catch((e) => {
     res.status(400).send(e);
   });
+});
+
+//Route to test the middleware. We pass the middleware as the second argument:
+app.get('/users/me', authenticate , (req, res) => {
+  //We send the user as response:
+  res.send(req.user);
 });
 
 //Setting up the express server:
