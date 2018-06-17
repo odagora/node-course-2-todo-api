@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
-
 const jwt = require('jsonwebtoken');
-
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 //New user mongoose schema:
 var UserSchema = new mongoose.Schema({
@@ -76,6 +75,22 @@ UserSchema.statics.findByToken = function (token) {
     'tokens.access': 'auth'
   });
 };
+
+//Mongoose Middleware method to be triggered before user's data saving. We use a conventional function to have access to the 'this' binding:
+UserSchema.pre('save', function (next) {
+  var user = this;
+  if (user.isModified('password')) {
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(user.password, salt, (err, hash) => {
+        user.password = hash;
+        next();
+      });
+    });
+  }
+  else {
+    next();
+  }
+});
 
 //User model creation:
 var User = mongoose.model('User', UserSchema);
