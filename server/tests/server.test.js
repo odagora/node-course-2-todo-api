@@ -5,38 +5,23 @@ const request = require('supertest');
 const {app} = require('./../server');
 //Importing the 'Todo' model:
 const {Todo} = require('./../models/todo');
+//Importing the 'User' model:
+const {User} = require('./../models/user');
+//Import seed file:
+const {todos, populateTodos, users, populateUsers} = require('./seed/seed');
 
 //We use object destructuring to grab the ids:
 const {ObjectID} = require('mongodb');
 
-//Array of data to be inserted in the database and test the GET method:
-var todos = [{
-  _id: new ObjectID,
-  text: 'First test todo'
-}, {
-  _id: new ObjectID,
-  text: 'Second test todo',
-  completed: true,
-  completedAt: 333
-}];
-
 //Run some code before each test to be sure that the database is empty:
-beforeEach((done) => {
-  //We use the remove() method which is similar to the mongoDB native method, passing and empty object. This function is going to move on only when we call done:
-  // Todo.remove({}).then(() => done());
-
-  //To make a GET test we need to have some data in the 'Todos' collection. We use the mongoose insertMany method to insert an array of data:
-  Todo.remove({}).then(() => {
-    return Todo.insertMany(todos);
-  }).then(() => done());
-});
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 //Group the tests with the 'describe' mocha method:
 describe('POST /todos', () => {
   //First test:
   it('should create a new todo', (done) => {
     var text = 'Test todo text'
-
     //Call of the supertest library:
     request(app)
       .post('/todos')
@@ -198,4 +183,76 @@ describe('PATCH /todos/:id', () => {
       })
       .end(done);
   });
+});
+
+//Testing POST /users/me:
+describe('GET /users/me', () => {
+  //First test case:
+  it('should return user if authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body._id).toBe(users[0]._id.toHexString());
+        expect(res.body.email).toBe(users[0].email);
+      })
+      .end(done)
+  });
+  //Second test case:
+  it('should return 401 if not authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .expect(401)
+      .expect((res) => {
+        expect(res.body).toEqual({});
+      })
+      .end(done)
+  });
+});
+
+//Testing POST /users:
+describe('POST /users', () => {
+    //First test case:
+    it('should create a user', (done) => {
+      var email = 'example@example.com';
+      var password = '123abc!';
+      request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(200)
+        .expect((res) => {
+          expect(res.headers['x-auth']).toExist();
+          expect(res.body._id).toExist();
+          expect(res.body.email).toBe(email);
+        })
+        .end((err) => {
+          if (err) {
+            return done(err);
+          }
+          User.findOne({email}).then((user) => {
+            expect(user).toExist();
+            expect(user.password).toNotBe(password);
+            done();
+          });
+        });
+    });
+    it('should return validation errors if request invalid', (done) => {
+      var email = 'email';
+      var password = '123';
+      request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(400)
+        .end(done)
+    });
+    it('should not create user if email in use', (done) => {
+      var email = 'daniel@example.com';
+      var password = '123abc';
+      request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(400)
+        .end(done)
+    });
 });
