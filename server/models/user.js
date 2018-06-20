@@ -49,7 +49,7 @@ UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = 'auth';
   //We generate the token similar as we did in the 'hashing.js' file:
-  var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
+  var token = jwt.sign({_id: user._id.toHexString(), access}, process.env.JWT_SECRET).toString();
   //All data is generated, next we update the information:
   user.tokens = user.tokens.concat([{access, token}]);
   //User information generation:
@@ -77,7 +77,7 @@ UserSchema.statics.findByToken = function (token) {
   var decoded;
   //We use the try and catch methods because the jwt.verify method throws an error if not valid:
   try {
-    decoded = jwt.verify(token, 'abc123');
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (e) {
     return Promise.reject();
   }
