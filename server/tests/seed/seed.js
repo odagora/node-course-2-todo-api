@@ -20,18 +20,26 @@ const users = [{
 }, {
   _id: userTwoId,
   email: 'jen@example.com',
-  password: 'userTwoPass'
+  password: 'userTwoPass',
+  tokens: [{
+    access: 'auth',
+    token: jwt.sign({_id: userTwoId, access: 'auth'}, 'abc123').toString()
+  }]
 }];
 
 //Array of data to be inserted in the database and test the GET method for todos:
 const todos = [{
   _id: new ObjectID,
-  text: 'First test todo'
+  text: 'First test todo',
+  //To associate the todo with the user who created it:
+  _creator: userOneId
 }, {
   _id: new ObjectID,
   text: 'Second test todo',
   completed: true,
-  completedAt: 333
+  completedAt: 333,
+  //To associate the todo with the user who created it:
+  _creator: userTwoId
 }];
 
 const populateTodos = (done) => {

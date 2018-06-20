@@ -24,10 +24,11 @@ const port = process.env.PORT;
 //Use of body-parser middleware:
 app.use(bodyParser.json());
 
-//Routes definition using the 'post' express method:
-app.post('/todos', (req, res) => {
+//Routes definition using the 'post' express method. We use the middleware to associate the 'todo' creation with the user:
+app.post('/todos', authenticate, (req, res) => {
   var todo = new Todo({
-    text: req.body.text
+    text: req.body.text,
+    _creator: req.user._id
   });
   todo.save().then((doc) => {
     res.send(doc);
@@ -37,9 +38,11 @@ app.post('/todos', (req, res) => {
 });
 
 //Route to get a 'Todos' list:
-app.get('/todos', (req, res) => {
-  //We use the same method for our server testing case:
-  Todo.find().then((todos) => {
+app.get('/todos', authenticate, (req, res) => {
+  //We use the same method for our server testing case. We list only the 'todos' created by the user who requested them:
+  Todo.find({
+    _creator: req.user._id
+  }).then((todos) => {
     //We send an object instead of an array:
     res.send({todos});
   }, (e) => {
@@ -48,7 +51,7 @@ app.get('/todos', (req, res) => {
 });
 
 //Route to GET an individual resource. We use the ':' followed by a name:
-app.get('/todos/:id', (req, res) => {
+app.get('/todos/:id', authenticate, (req, res) => {
   //The parameter passed is in 'req.params':
   // res.send(req.params);
   var id = req.params.id;
@@ -56,8 +59,11 @@ app.get('/todos/:id', (req, res) => {
   if (!ObjectID.isValid(id)) {
     return res.status(404).send();
   }
-  //If the 'id' is valid, then 'findById':
-  Todo.findById(id).then((todo) => {
+  //If the 'id' is valid, then 'findOne' and specify the '_id' and '_creator':
+  Todo.findOne({
+    _id: id,
+    _creator: req.user._id
+  }).then((todo) => {
     if (!todo) {
       return res.status(404).send();
     }
@@ -69,12 +75,15 @@ app.get('/todos/:id', (req, res) => {
 });
 
 //Route to DELETE an individual resource:
-app.delete('/todos/:id', (req, res) => {
+app.delete('/todos/:id', authenticate, (req, res) => {
   var id = req.params.id;
   if (!ObjectID.isValid(id)) {
     return res.status(404).send();
   }
-  Todo.findByIdAndRemove(id).then((todo) => {
+  Todo.findOneAndRemove({
+    _id: id,
+    _creator: req.user._id
+  }).then((todo) => {
     if (!todo) {
       return res.status(404).send();
     }
@@ -85,7 +94,7 @@ app.delete('/todos/:id', (req, res) => {
 });
 
 //Route to UPDATE an individual resource:
-app.patch('/todos/:id', (req, res) => {
+app.patch('/todos/:id', authenticate, (req, res) => {
   var id = req.params.id;
   //Creation of a variable that pulls only the content to be updated. We use the '.pick' method of the 'lodash' library (ref. https://lodash.com/docs/4.17.10#pick):
   var body = _.pick(req.body, ['text', 'completed']);
@@ -102,8 +111,11 @@ app.patch('/todos/:id', (req, res) => {
     body.completed = false;
     body.completedAt = null;
   }
-  //If success, we update the document with the 'findByIdAndUpdate' mongoose method. The first argument is the key, and the second is the options:
-  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+  //If success, we update the document with the 'findOneAndUpdate' mongoose method. The first argument is the key, and the second is the options:
+  Todo.findOneAndUpdate({
+    _id: id,
+    _creator: req.user._id
+  }, {$set: body}, {new: true}).then((todo) => {
     if (!todo) {
       return res.status(404).send();
     }
