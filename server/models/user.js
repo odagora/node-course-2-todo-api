@@ -58,6 +58,18 @@ UserSchema.methods.generateAuthToken = function () {
   });
 };
 
+//'removeToken' Model instance creation:
+UserSchema.methods.removeToken = function (token) {
+  var user = this;
+  //We use the update method:
+  return user.update({
+    //We use the '$pull' mongodb operator that let's remove items from array matching certain criteria:
+    $pull: {
+      tokens: {token}
+    }
+  });
+};
+
 //'findByToken' Model method creation. For this type of methods we use the 'statics' word:
 UserSchema.statics.findByToken = function (token) {
   var User = this;
